@@ -1,0 +1,494 @@
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+     <script src= 'https://code.jquery.com/jquery-1.11.3.js'></script>
+     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+     <title>PassX steps-Vizualization</title>
+  </head>
+  <body>
+       <h2 class="text-center" id = "passes">Next Pass</h2>
+       <h4 class="text-center" id = "comment">Lets Start</h4>
+    <div class='container-fluid'>
+        <p id="values">Our Values</p>
+        <div id="infileDisk" float="left">
+            <h3 id="step"></h3>
+            <p>Infile(DISK)</p>
+            <p id="infile">(------------------------)</p>
+        </div>
+        <div id="bufferRam">
+            <p>buffer(RAM)</p>
+            <p id="buffer">(------------------------)</p>
+        </div>
+        <div id="outfileDisk">
+            <p>Outfile(DISK)</p>
+            <p id="outFile">(------------------------)</p>
+        </div>
+        <button class='btn-primary'id='toIndexPage' onclick="location.href = 'index.html'">Home Page</button>
+        <button class='btn-primary'id='toNextStep'>Next Step</button>   
+        </div>
+        <!--comments in html onclick="toStep2Function()"-->
+    </div>
+    <script>
+      document.body.style.backgroundColor = "#4dffff";
+
+      var recs = JSON.parse(localStorage.myRecs);
+      var recsPerPages = JSON.parse(localStorage.myRecsPerPages);
+      var bufferFrames = JSON.parse(localStorage.myBufferFrames);
+      var pages = JSON.parse(localStorage.myPages);
+      var bufferLength = JSON.parse(localStorage.myBufferLength);
+      var full = (bufferFrames-1)*recsPerPages;//IN1 kai IN2 max value bufferFrames-1 or (bufferFrames-1)*recsPerPages
+        //full/(bufferFrames-1) = recsPerPages
+
+      var steps = 0;
+      var passx =  JSON.parse(localStorage.myPasses);
+      var prevPass = passx - 1;
+      var comment;
+      var countIfEmptyInfile;
+      var countIfEmptyTrain;
+      var countIfEmptyBuffer;
+      var run = true;
+      //var posTrain = 0;
+      var trains = 0;
+      var reps = 0;
+      //var posTrain;
+      //var moreIns = false;
+
+      var infileArray = new Array(recs);
+      var bufferArray = new Array(bufferLength);  
+      var outFileArray = JSON.parse(localStorage.myoutFileArray);
+
+      //πινακας που κραταει τις πρωτες θεσεις του καθε συρμού
+      var trainArray = JSON.parse(localStorage.myTrainArray);
+      var trainLength = trainArray[1];
+      var trainReps = JSON.parse(localStorage.mytrainReps);
+      //var prevTrainLength = JSON.parse(localStorage.myPrevTrainLength);
+      console.log(trainArray);
+      console.log(trainReps);
+      console.log(trainLength);
+      console.log(trainArray.length);
+      console.log(trains);
+      var trainNumber = trainArray.length-1;
+      console.log(trainNumber);
+
+      var posBuff = new Array(/*bufferFrames-1*/);
+
+      posBuff[0] = 0;
+
+      for(var i=1;i<bufferFrames-1;i++) {
+        posBuff[i] = +posBuff[i-1] + +recsPerPages;
+      }
+      console.log(posBuff);
+      
+      //var trainArray = new Array(Math.ceil(recs/bufferLength));
+      var runArray = new Array(bufferFrames-1);
+
+      /*if(trainReps==recs) {
+        moreIns = true;
+      }*/
+
+      for(var i=0;i<bufferFrames-1;i++) {
+        runArray[i] = false;
+      }   
+
+      for(var i=0;i<bufferLength;i++) {
+          bufferArray[i] = '-';
+        }
+      
+      for(var i=0;i<recs;i++) {
+        infileArray[i] = '-';
+      }
+
+      $('#toNextStep').click(function(){
+        $('#values').html("recs: " + recs +"<br />"+"recsPerPage: " + recsPerPages + "<br />" +"bufferFrames: " + bufferFrames);
+         comment = document.getElementById('comment').innerHTML;
+         steps++;
+
+         if(run) {
+          if(comment == 'Lets Start'){
+            document.getElementById('step').innerHTML = "Step" + steps;
+            document.getElementById('comment').innerHTML = "---Load Outfile(from pass" + prevPass + ")"  + " to Infile(pass" + passx + ")---";
+            document.getElementById('passes').innerHTML = "Pass" + passx + " Visualization";
+
+            for(var i=0;i<recs;i++){
+              infileArray[i] = outFileArray[i];
+              outFileArray[i] = '-';
+            }
+
+            document.getElementById('infile').innerHTML = "(" + infileArray + ")";
+         }
+         else if(comment == "---Load Outfile(from pass" + prevPass + ")"  + " to Infile(pass" + passx + ")---"){
+            document.getElementById('step').innerHTML = "Step" + steps;
+            if(emptyBufferFrame()) {
+              loadEmptyBufferFrames();
+              console.log(0);
+            }
+            console.log(1);
+         }
+         else if(comment == "---Load Pages to Empty buffer frames---") {
+           document.getElementById('step').innerHTML = "Step" + steps;
+           fillOutFrame();
+           console.log(2);
+         }
+         else if(comment == "---Fill buffer OUT frame with the smallest values(if needed)---"){
+           document.getElementById('step').innerHTML = "Step" + steps;
+           if(emptyBufferFrame() && countIfEmptyInfile!=recs && countIfEmptyTrain!=trainLength*(bufferFrames-1)/*trainReps[trains]*/) {
+             console.log(runArray);
+            loadEmptyBufferFrames();
+            console.log(3);
+           }
+           else {
+             fillOutfile();
+             console.log(4);
+           }
+         }
+         else if(comment == "---Fill outfile with the smallest values from buffer---") {
+          document.getElementById('step').innerHTML = "Step" + steps;
+          if(countIfEmptyBuffer==bufferLength) {
+            trains++;
+            reps += (bufferFrames-1);
+            trainNumber = trainNumber - (bufferFrames-1);
+            if(emptyBufferFrame()) {
+              loadEmptyBufferFrames();
+            }
+            console.log(5)
+          }
+          else {
+            fillOutFrame();
+            console.log(6);
+          }
+         }
+        }
+        else {
+          document.getElementById('step').innerHTML = "finished";
+          document.getElementById('comment').innerHTML = "END - NO MORE PAGES TO LOAD"; 
+          document.getElementById('toNextStep').innerHTML = 'Go to the next pass or end the procedure';
+
+          if(!isSorted(outFileArray)) {
+            $('#toNextStep').click(function() {
+              var countTrains = 0;
+              //prevTrainLength = trainArray[1];
+              var trainArray = new Array();
+              for(i=0;i<recs;i++) {
+                if(i%(trainLength*(bufferFrames-1))==0) {
+                  trainArray[countTrains] = i;
+                  countTrains++;
+                }
+              }
+
+              trainArray[countTrains] = infileArray.length;
+
+              if(countTrains<=2) {
+                  var trainReps = new Array();
+                  trainReps[0] = infileArray.length;
+                }
+                else {
+                  var trainReps = new Array();
+                  var count = 0;
+                  for(var i=1;i<recs;i++) {
+                    if(i%((bufferLength*(bufferFrames-1))*trains)==0) {
+                        trainReps[count] = i;
+                        count++;
+                    }
+                  }
+                  trainReps[count] = infileArray.length;
+                }
+                
+              localStorage.mytrainReps=JSON.stringify(trainReps);
+
+              //localStorage.myPrevTrainLength=JSON.stringify(prevTrainLength);
+
+              localStorage.myTrainArray=JSON.stringify(trainArray);
+              passx++;
+              localStorage.myPasses = JSON.stringify(passx);
+              localStorage.myoutFileArray=JSON.stringify(outFileArray);
+              location.href = 'pass1.html';
+            }
+            )
+          }
+          else {
+            $('#toNextStep').click(function() {
+              document.getElementById('comment').innerHTML = "END - NO MORE PASSES"; 
+              document.getElementById('toNextStep').innerHTML = 'Go to the next pass or end the procedure';
+              $(this).hide();
+            }
+            )
+          }
+        }
+      }
+      )
+
+      function loadEmptyBufferFrames() {
+        var empty = 0;
+        var emptyInfile = 0;
+        var posTrain = reps;
+        var countRecs = 0;
+
+        /*for(var i=trainArray[prevTrainLength];i<trainArray[trainLength];i++) {
+          if(infileArray[i]=='-') {
+            empty++;
+          }
+        }
+        if(empty==trainArray[trainLength]) {
+          posTrain++;
+        }*/
+        
+        for(var k=0;k<bufferFrames-1;k++) {
+          if(runArray[k]) {
+            for(var i=trainArray[posTrain];i<trainReps[trains];i++) {
+              countRecs = 0
+              if(infileArray[i]!='-') {
+                for(var j=0;j<recsPerPages;j++) {
+                  
+                  if(infileArray[i+j]!=null) {
+                    bufferArray[posBuff[k]+j] = infileArray[i+j];
+                    infileArray[i+j] = '-';
+                    runArray[k] = false;
+                    countRecs++;
+                  }
+                  //
+                }
+              }
+              emptyInfile = 0;
+              for(var h=0;h<recs;h++) {
+                if(infileArray[h]=='-') {
+                  emptyInfile++;
+                }
+              }
+              if(emptyInfile==recs) {
+                break;
+              }
+              if(countRecs==recsPerPages) {
+                break;
+              }
+            }
+          }
+          posTrain++; 
+          if(posTrain>=trainArray.length) {
+            break;
+          }        
+        }
+        for(var i=0;i<bufferFrames-1;i++) {
+          runArray[i] = false;
+        }
+      
+
+        document.getElementById('comment').innerHTML = "---Load Pages to Empty buffer frames---";
+        document.getElementById('buffer').innerHTML = "(" + bufferArray + ")";
+        document.getElementById('infile').innerHTML = "(" + infileArray + ")";
+      }
+
+      //συναρτηση που γεμίζει το OUT frame του buffer
+      function fillOutFrame() {
+        
+        countIfEmptyInfile = 0;
+        countIfEmptyTrain = 0;
+        
+        for(var i=0;i<recs;i++) {
+          if(infileArray[i]=='-') {
+            countIfEmptyInfile++;
+          }
+        }
+        for(var i=trainArray[reps];i<trainReps[trains];i++) {
+          if(infileArray[i]=='-') {
+            countIfEmptyTrain++;
+          }
+        }
+        console.log(countIfEmptyTrain);
+        console.log(trainReps[trains]);
+
+        for(var j=0;j<recsPerPages;j++) {
+          //if()
+          if(!emptyBufferFrame() && countIfEmptyInfile!=recs && countIfEmptyTrain!=trainLength*(bufferFrames-1)) {//trainReps[trains] && trainReps[trains]!=recs) {
+            if(bufferArray[full+j]!='-') {
+              continue;
+            }
+            fillFrame(j);
+            console.log(7);
+          }
+          else if(countIfEmptyInfile==recs || countIfEmptyTrain==trainLength*(bufferFrames-1) /*|| trainReps[trains]==recs*/) {
+            if(bufferArray[full+j]!='-') {
+              continue;
+            }
+            fillFrame(j);
+            console.log(8);
+          }
+          else if(trainReps[trains]==recs) {
+            if(bufferArray[full+j]!='-') {
+              continue;
+            }
+            var count = 0;
+            while(!emptyBufferFrame() || count==recsPerPages) {
+              fillFrame(j);
+              count++;
+            }
+            console.log(9);
+          }
+          else {
+            var count = 0;
+            while(!emptyBufferFrame() || count==recsPerPages) {
+              fillFrame(j);
+              count++;
+            }
+            console.log(10);
+          }
+        }
+            
+
+        document.getElementById('comment').innerHTML = "---Fill buffer OUT frame with the smallest values(if needed)---";
+        document.getElementById('buffer').innerHTML = "(" + bufferArray + ")";
+      }
+
+      function fillFrame(j) {
+        var index;
+        var minValue;
+
+        index = 0;
+        minValue = bufferArray[0];
+        var h = 1;
+        while(minValue=='-' && h<full) {
+          minValue = bufferArray[h];
+          index = h;
+          h++;
+        }
+
+        for(var i=h;i<full;i++) {
+          if(bufferArray[i] < minValue && bufferArray[i]!='-' && bufferArray[i]!=null) {
+            minValue = bufferArray[i];
+            index = i;
+          }
+        }
+        //if(buffArray[full+j]!='-') {
+          //return;
+        //}
+        //else {
+          bufferArray[index] = '-';
+          bufferArray[full+j] = minValue;
+        //}
+      }
+
+      function emptyBufferFrame() {
+        var countH;
+        var countFrames;
+
+        //Ελεγχει αν/και/ποια σελιδα του μπαφερ ειναι εντελως αδεια 
+        //και κανει true το στοιχειο του πινακα run array[i];       
+        countH = 0;
+        for(var j=0;j<bufferFrames-1;j++) {
+          runArray[j] = false;
+          countFrames = 0;
+          for(h=0;h<recsPerPages;h++) {
+            if(bufferArray[countH]=='-') {
+              countFrames++;
+              if(countFrames==recsPerPages) {
+                runArray[j] = true;
+              }
+            }
+            countH++;
+          }
+        }
+        //console.log(runArray);
+        //console.log(1);
+
+        if(trainNumber<bufferFrames-1) {
+          for(var i=trainNumber;i<bufferFrames-1;i++) {
+            if(runArray[i]==true) {
+              runArray[i] = false;
+            }
+          }
+        }
+        //console.log(runArray);
+        //console.log(2);
+
+        var emptyTrain = 0;
+        for(var i=reps;i<bufferFrames-1;i++) {
+          if(trainArray[i+1]!=null) {
+            var lengthOfTrain = 0;
+            for(var j=trainArray[i];j<trainArray[i+1];j++) {
+              if(infileArray[j]=='-') {
+                emptyTrain++;
+              }
+            }
+            lengthOfTrain = trainArray[i+1] - trainArray[i];
+            //console.log(lengthOfTrain);
+            if(emptyTrain==lengthOfTrain/*trainLength*/) {
+              runArray[i] = false;
+            }
+          }
+          emptyTrain = 0;
+        }
+        //console.log(runArray);
+        //console.log(3);
+
+        //for(var k=0;k<trainArray)
+
+        /*if(runArray.length<=2) {
+          if(infileArray[recs-1]=='-' || (trainReps[trains]==recs && ((recs-trainArray[reps])<trainArray[1]))) {
+            for(var j=1;j<bufferFrames-1;j++) {
+              if(runArray[j]==true) {
+                runArray[j] = false;
+              }
+            }
+          }
+        }*/
+        
+        //console.log(runArray);
+        //console.log(4);
+
+        for(i=0;i<bufferFrames-1;i++) {
+          if(runArray[i]==true) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function fillOutfile(){
+      
+        var counter=0;
+        countIfEmptyBuffer = 0;
+
+        for(var j=0;j<recs;j++) {
+          if(outFileArray[j]=='-' && counter!=recsPerPages) {
+            outFileArray[j] = bufferArray[full+counter];
+            bufferArray[full+counter] = '-';
+            counter++;
+          }
+        }
+        //Αν γεμισει ο outfile τοτε run = true
+        for(i=0;i<recs;i++) {
+          if(outFileArray[i]=='-') {
+            run = true;
+          }
+          else {
+            run = false;
+          }
+        }
+        //εξετάζει πόσα στοιχεια του μπαφερ ειναι κενα
+        for(var i=0;i<bufferLength;i++) {
+          if(bufferArray[i]=='-') {
+            countIfEmptyBuffer++;
+          }
+        }
+      
+        document.getElementById('comment').innerHTML = "---Fill outfile with the smallest values from buffer---";
+        document.getElementById('buffer').innerHTML = "(" + bufferArray + ")";
+        document.getElementById('outFile').innerHTML = "(" + outFileArray + ")";
+    }
+
+    function isSorted(array) {
+      for (var i = 0; i < array.length - 1; i++) {
+        if (array[i] > array[i + 1]) {
+            return false; // Αν δεν εχει ταξινομηθεί ο πινακας
+        }
+    }
+
+    return true;
+    }
+       
+    </script>
+  </body>
+
+</html>
