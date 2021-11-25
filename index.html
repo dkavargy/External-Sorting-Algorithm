@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>External Sorting Visualization.js</title>
+    <script src= 'https://code.jquery.com/jquery-1.11.3.js'></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <style>
+      div#problemArea {border:solid 2px red; margin:7px; 
+				background-color:#000000;
+        color: white;
+				float:right; 
+        padding: 5px;
+        width: 250px;
+        height: 10px;
+        padding-bottom: 100px;  			        
+				} 
+      div#problemArea1 {border:solid 2px red; margin:7px; 
+		
+				background-color:#292344;
+				color: white;
+				float:right; 
+        padding: 5px;
+        width: 250px;
+        height: 10px;
+        padding-bottom: 100px;      
+				} 
+
+    </style>
+  </head>
+  <body>
+    <h2 class='text-center'>External Sorting Visualization</h2>
+      <div class='container-fluid'>
+        <div id="problemArea"> Problems will appear here about recsPerPage</div>
+          <div id="problemArea1"> Problems will appear here about bufferFrames</div>
+          <div class='row'>
+            <div class='col-md-9'>
+                <div class='select-group'>
+                  <p><strong>Select Options</strong></p>
+                </div>
+              <div class='select-group'>
+                <label for='#recs'>recs:</label> 
+                <input id='recs' type='number' value="20"/>[1...100]
+              </div>
+              <div class='select-group'>
+                  <label for='#rec/Page'>recs/Page:</label>
+                  <input id='rec/Page'  type='number' value="4"/>range of values [4...10]
+              </div>
+              <div class='select-group'>
+                  <label for='#Frames'>buffFrames:</label>
+                  <input id='Frames'  type='number' value="3"/>range of values [3...10] 
+              </div>
+              <div>
+                <button onclick="toPage2()" id="myButton" class='btn-primary' id='start-btn'>Start</button>
+              </div>
+            </div>
+            <!--<div class='col-md-9' id='canvas-div'>
+              <canvas width="800px" height="600px" id="main-canvas">
+            </div>-->
+          </div>
+        </div>
+        <script>
+          document.body.style.backgroundColor = "#4dffff";
+
+         function appendTo(ID,Text){
+				var x = document.getElementById(ID);
+				x.innerHTML = x.innerHTML + Text + "<br />";
+			}
+			// Clears all the text in the element with ID.
+			function clearElement(ID) {
+				var x = document.getElementById(ID);
+				x.innerHTML = " ";
+			}
+
+			// Writes to an element deleting previous text
+			function writeTo(ID,Text){
+				clearElement(ID);
+				appendTo(ID,Text);
+			}
+
+          function toPage2() {      
+
+            var bufferFrames = document.getElementById("Frames").value;
+            var recsPerPages = document.getElementById("rec/Page").value;
+
+            clearElement("problemArea");
+            if(recsPerPages < 4 || recsPerPages > 10 ){
+              writeTo("problemArea","Please enter a valid value between 4 and 10 in recsPerPage box");
+              //delay(10);
+              //if(bufferFrames < 3 || bufferFrames > 10){
+               // writeTo("problemArea1","Please enter a valid value between 3 and 10 in bufferframes box");
+             // }
+             // location.href = 'index.html';
+            }                  
+            if(bufferFrames < 3 || bufferFrames > 10 ){
+              writeTo("problemArea1","Please enter a valid value between 3 and 10 in bufferframes box");
+              delay(10);
+              location.href = 'index.html';
+            }
+            else if(bufferFrames > 3 || bufferFrames <10){
+              clearElement("problemArea1");
+            }
+            if(bufferFrames >= 3 && bufferFrames <= 10 && recsPerPages >= 4 && recsPerPages <=10){
+              var x = document.getElementById("recs");
+            //var defaultRecs = x.defaultValue;
+            //var currentRecs = x.value;        
+            var recs = document.getElementById("recs").value;
+            var pages = recs/recsPerPages;
+            var bufferLength = recsPerPages*bufferFrames;
+
+            localStorage.myRecs=JSON.stringify(recs);
+            localStorage.myRecsPerPages=JSON.stringify(recsPerPages);
+            localStorage.myBufferFrames=JSON.stringify(bufferFrames);
+            localStorage.myPages=JSON.stringify(pages);
+            localStorage.myBufferLength=JSON.stringify(bufferLength);
+            location.href = 'pass0.html';
+            }               
+
+            
+          }
+
+          /*function validateValues(){
+            if(document.getElementById('rec/Page').innerHTML < 4 && document.getElementById('rec/Page').innerHTML>10 ){
+                      alert('Please enter a valid value between 4 and 10');
+                      return false;
+            }
+            if(document.getElementById('Frames').innerHTML < 3 && document.getElementById('Frames').innerHTML> 10 ){
+              alert('Please enter a valid value between 3 and 10');
+              return false;
+            }
+           return true;
+           location.herf = 'index.html';
+          }*/
+        </script>
+  </body>
+</html>
